@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="InfirmiApp"/>
+<meta name="theme-color" content="#0f1923"/>
+<title>InfirmiApp — Démarche de Soins</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f1923;--sur:#162130;--card:#1c2d3f;
+  --ac:#00c2a8;--as:rgba(0,194,168,.12);--ab:rgba(0,194,168,.35);
+  --go:#f0a500;--gs:rgba(240,165,0,.11);
+  --da:#e05252;--ds:rgba(224,82,82,.11);
+  --tx:#e8edf2;--mu:#7a9ab0;--bo:rgba(255,255,255,.07);
+  --f:'Sora',sans-serif
+}
+html,body{min-height:100%;background:var(--bg);color:var(--tx);font-family:var(--f);overflow-x:hidden}
+body{padding-bottom:40px}
+
+/* HEADER */
+.hdr{position:sticky;top:0;z-index:100;background:var(--sur);border-bottom:1px solid var(--bo);padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top))}
+.hdr-in{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ac)}
+.title{font-size:15px;font-weight:700}
+.hdr-r{display:flex;align-items:center;gap:8px}
+.save-msg{font-size:11px;color:var(--ac)}
+
+/* MAIN */
+.main{max-width:900px;margin:0 auto;padding:18px 14px 40px}
+
+/* STEPPER */
+.stepper{display:flex;gap:3px;margin-bottom:18px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.stepper::-webkit-scrollbar{display:none}
+.step{flex:1;min-width:70px;padding:8px 4px;border-radius:9px;border:1px solid var(--bo);background:transparent;color:var(--mu);cursor:default;text-align:center;font-family:var(--f);transition:all .2s}
+.step.active{border-color:var(--ac);background:var(--as);color:var(--ac)}
+.step.done{border-color:var(--ab);color:var(--ac);cursor:pointer}
+.step-icon{font-size:16px;display:block;margin-bottom:2px}
+.step-lbl{font-size:9px;font-weight:600;white-space:nowrap}
+
+/* PROGRESS */
+.prog-wrap{height:3px;background:var(--bo);border-radius:2px;margin-bottom:18px}
+.prog-bar{height:3px;background:linear-gradient(90deg,var(--ac),var(--go));border-radius:2px;transition:width .4s ease}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--bo);border-radius:12px;padding:18px;margin-bottom:14px}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ac);border-bottom:1px solid var(--ab);padding-bottom:7px;margin-bottom:14px}
+
+/* FORM */
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:10px;color:var(--mu);margin-bottom:3px;letter-spacing:.06em;text-transform:uppercase}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--bo);border-radius:8px;padding:9px 12px;color:var(--tx);font-size:13px;font-family:var(--f);outline:none;appearance:none;-webkit-appearance:none;transition:border-color .2s;box-sizing:border-box}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+textarea{resize:vertical}
+select option{background:var(--card)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px}
+@media(max-width:500px){.g2,.g3{grid-template-columns:1fr}}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;font-family:var(--f);cursor:pointer;border:none;transition:opacity .18s;white-space:nowrap}
+.btn:active{opacity:.7}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-pr{background:var(--ac);color:#0f1923}
+.btn-se{background:transparent;color:var(--ac);border:1px solid var(--ab)}
+.btn-da{background:transparent;color:var(--da);border:1px solid rgba(224,82,82,.3)}
+.btn-gh{background:var(--as);color:var(--ac);border:1px solid var(--ab)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-full{width:100%}
+
+/* TOGGLES */
+.tog{padding:7px 14px;border-radius:20px;border:1px solid var(--bo);background:transparent;color:var(--mu);cursor:pointer;font-size:12px;font-family:var(--f);font-weight:600;transition:all .2s}
+.tog.on{border-color:var(--ac);background:var(--as);color:var(--ac)}
+
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:8px;margin:14px 0 10px}
+.div-line{flex:1;height:1px}
+.div-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap}
+
+/* SUGGESTION CARD */
+.sug-card{border-radius:11px;padding:16px;margin-bottom:10px;transition:opacity .3s}
+.sug-card.rejected{opacity:.35}
+
+/* PLAN TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px}
+.plan-table{width:100%;border-collapse:collapse;font-size:11px;min-width:860px}
+.plan-table th{background:#111d28;color:var(--ac);font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:8px 9px;text-align:left;border-bottom:2px solid var(--ab)}
+.plan-table td{padding:9px;vertical-align:top;border-bottom:1px solid var(--bo);line-height:1.5}
+.plan-table textarea{width:100%;min-height:65px;font-size:11px;padding:5px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--bo);color:var(--tx);font-family:var(--f);outline:none;resize:vertical}
+.plan-table textarea:focus{border-color:var(--ac)}
+.ai-badge{display:inline-block;background:var(--as);color:var(--ac);font-size:8px;font-weight:700;padding:2px 6px;border-radius:5px;margin-bottom:3px;letter-spacing:.08em;text-transform:uppercase}
+
+/* SPINNER */
+.spinner{width:44px;height:44px;border:3px solid var(--ab);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* PATIENT RECAP */
+.patient-card{background:linear-gradient(135deg,#1a2f42,#162130);border:1px solid var(--ab);border-radius:12px;padding:18px;margin-bottom:14px}
+.allergy-tag{margin-top:10px;padding:7px 12px;background:var(--ds);border:1px solid rgba(224,82,82,.3);border-radius:8px;color:var(--da);font-size:12px;font-weight:700}
+
+/* PROG TABLE */
+.prog-table{width:100%;border-collapse:collapse;font-size:12px}
+.prog-table th{background:#111d28;color:var(--ac);font-size:10px;padding:8px 10px;text-align:left;border-bottom:2px solid var(--ab)}
+.prog-table td{padding:9px 10px;border-bottom:1px solid var(--bo);vertical-align:top}
+.prog-table tr:last-child td{border-bottom:none}
+
+/* NAV */
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--bo)}
+
+/* SAVE BANNER */
+.save-banner{background:rgba(0,194,168,.07);border-bottom:1px solid var(--ab);padding:5px 16px;text-align:center;font-size:11px;color:var(--ac)}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px}
+.stat{background:var(--sur);border:1px solid var(--bo);border-radius:9px;padding:9px;text-align:center}
+.stat-n{font-size:20px;font-weight:800}
+.stat-l{font-size:9px;color:var(--mu);text-transform:uppercase;margin-top:2px}
+
+@media print{
+  .hdr,.stepper,.prog-wrap,.nav,.btn,.no-print{display:none!important}
+  body{background:#fff!important;color:#111!important}
+  .card,.patient-card{background:#fff!important;border:1px solid #ccc!important}
+  .plan-table th,.prog-table th{background:#e8f4f8!important;color:#006!important}
+  .plan-table td,.plan-table textarea,.prog-table td{color:#111!important}
+  .plan-table textarea{border:none!important;background:transparent!important}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-in">
+    <div>
+      <div class="brand">InfirmiApp v3</div>
+      <div class="title">Démarche de Soins Infirmiers</div>
+    </div>
+    <div class="hdr-r">
+      <span class="save-msg" id="save-msg"></span>
+      <button class="btn btn-gh btn-sm" onclick="manualSave()">💾</button>
+      <span style="font-size:11px;color:var(--mu)" id="step-cnt">1/6</span>
+    </div>
+  </div>
+</div>
+
+<div class="save-banner" id="save-banner" style="display:none">💾 Données restaurées</div>
+
+<div class="main">
+  <div class="stepper" id="stepper"></div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:16%"></div></div>
+  <h2 id="step-title" style="font-size:18px;font-weight:700;margin-bottom:16px"></h2>
+  <div id="content"></div>
+  <div class="nav">
+    <button class="btn btn-se" id="btn-prev" onclick="prev()" style="display:none">← Précédent</button>
+    <div style="flex:1"></div>
+    <button class="btn btn-pr" id="btn-next" onclick="next()">Suivant →</button>
+  </div>
+</div>
+
+<script>
+// ══ CONFIG ══════════════════════════════════════════════════
+const API_KEY = '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';
+const API_URL = 'https://api.anthropic.com/v1/messages';
+const MODEL   = 'claude-sonnet-4-5';
+const SAVE_KEY = 'infirmiapp_v3';
+
+// ══ DONNÉES MR A ════════════════════════════════════════════
+const MR_A = {
+  patient:{
+    nom:'A.', prenom:'Monsieur', age:'79', sexe:'Masculin',
+    profession:'Retraité (ancien agent SNCF)', situationFamiliale:'Séparé',
+    allergies:'Aucune allergie connue', service:'Gastroentérologie',
+    dateHospitalisation:'2026-04-20',
+    motifHospitalisation:'Hospitalisé pour angiocholite lithiasique avec sepsis sévère. Evolution vers choc septique le 16/03/2026 avec coulées de nécrose pancréatique rétropéritonéales surinfectées (Klebsiella ornithinolytica, Enterococcus faecalis, Streptococcus anginosus, E.coli BLSE). Drainage percutané le 17/03/2026. Escarre sacrée stade 3. Dénutrition sévère avec nutrition entérale par SNG. Episodes de confusion liés au contexte infectieux. Altération importante de l état général.'
+  },
+  clinique:{
+    poids:'', taille:'', imc:'30.4', glasgow:'15',
+    ta:'133/79', fc:'81', spo2:'', temperature:'35.9',
+    evaDouleur:'0', hemoglobine:'10', crp:'68',
+    potassium:'', sodium:'', glycemie:'',
+    autres:'Leucocytes 9,7 G/L | Plaquettes 437 G/L | INR 1 | TP 100% | Creatinine 61 µmol/L | DFG 90 | Scanner 05/05/2026: régression partielle collection rétropéritonéale | Drain abdominal non productif 50cc | Escarre sacrée stade 3 | SNG en place repère 56cm'
+  },
+  ant:{
+    medicaux:['AIT 2012','Syndrome coronarien aigu 2019 - angioplastie + 2 stents actifs','Fibrillation atriale 2019','Hypertension artérielle','Diabète type 2 insulino-dépendant','Dyslipidémie','Obésité stade 1 IMC 30,4','Angiocholite à Enterococcus faecalis et Candida albicans - double prothèse biliaire 24/02/2026'],
+    chirurgicaux:['Remplacement valvulaire aortique mécanique 2001','Appendicectomie','Acromioplastie 2015','Photovaporisation de prostate 2020'],
+    familiaux:'Non renseignés',
+    hab:{tabac:false, alcool:true, sedentarite:true},
+    psycho:'Difficultés à supporter la longue hospitalisation. Episodes de confusion et désorientation temporo-spatiale. Psychologue EMSP suivie. Miansérine 10mg et Paroxétine 20mg introduits.'
+  },
+  traits:[
+    {nom:'Atorvastatine',dose:'40mg',voie:'Orale (PO)',frequence:'1x/j soir',indication:'Dyslipidémie et ATCD cardiovasculaires'},
+    {nom:'Bisoprolol',dose:'2,5mg',voie:'Orale (PO)',frequence:'Matin et soir',indication:'Fibrillation atriale et HTA'},
+    {nom:'Dapagliflozine (Forxiga)',dose:'10mg',voie:'Orale (PO)',frequence:'1x/j matin',indication:'Diabète type 2'},
+    {nom:'Macrogol (Movicol)',dose:'10g',voie:'Orale (PO)',frequence:'1x/j matin',indication:'Prévention constipation liée à alitement'},
+    {nom:'Miansérine',dose:'10mg',voie:'Orale (PO)',frequence:'1x/j soir',indication:'Altération état psychologique'},
+    {nom:'Paroxétine',dose:'20mg',voie:'Orale (PO)',frequence:'1x/j matin',indication:'Retentissement psychologique hospitalisation prolongée'},
+    {nom:'Tamsulosine (Xatral)',dose:'0,4mg',voie:'Orale (PO)',frequence:'1x/j à 20h',indication:'Troubles urinaires liés à pathologie prostatique'},
+    {nom:'Zopiclone',dose:'3,75mg',voie:'Orale (PO)',frequence:'1x/j à 22h',indication:'Troubles du sommeil'},
+    {nom:'Glucidion G5 + Ecoflac',dose:'1L',voie:'Perfusion IV',frequence:'Continu /24h',indication:'Besoins hydriques et énergétiques - dénutrition sévère'},
+    {nom:'Ringer Lactate',dose:'500mL',voie:'Perfusion IV',frequence:'/24h',indication:'Equilibre hydro-électrolytique'},
+    {nom:'Ertapénem',dose:'1g',voie:'IV directe',frequence:'1x/j',indication:'Infection polymicrobienne - sepsis sévère - BLSE'},
+    {nom:'Esoméprazole',dose:'40mg',voie:'IV directe',frequence:'1x/j',indication:'Protection gastrique'},
+    {nom:'Sondalis HP 2kcal fibre',dose:'500mL',voie:'Locale',frequence:'60mL/h matin et soir 8h par SNG',indication:'Dénutrition sévère - pancréatite aiguë compliquée'},
+    {nom:'Enoxaparine (Lovenox)',dose:'0,8mL',voie:'Sous-cutanée (SC)',frequence:'Matin et soir',indication:'Risque thromboembolique - alitement et ATCD cardiovasculaires'},
+    {nom:'Insuline glargine (Abasaglar)',dose:'42 UI',voie:'Sous-cutanée (SC)',frequence:'1x/j à 20h',indication:'Diabète insulino-dépendant'},
+    {nom:'Insuline lispro',dose:'Selon protocole glycémique',voie:'Sous-cutanée (SC)',frequence:'Selon glycémie capillaire',indication:'Equilibre glycémique'},
+    {nom:'Paracétamol',dose:'1g',voie:'IV directe',frequence:'Si EVA > 3',indication:'Douleurs ou hyperthermie'},
+    {nom:'Spasfon',dose:'40mg',voie:'IV directe',frequence:'Si douleurs abdominales',indication:'Spasmes digestifs'}
+  ]
+};
+
+// ══ STATE ════════════════════════════════════════════════════
+const initState = () => ({
+  step: 1,
+  patient: {nom:'',prenom:'',age:'',sexe:'',profession:'',situationFamiliale:'',allergies:'',motifHospitalisation:'',service:'',dateHospitalisation:''},
+  clinique: {poids:'',taille:'',imc:'',glasgow:'',ta:'',fc:'',spo2:'',temperature:'',evaDouleur:'',hemoglobine:'',crp:'',potassium:'',sodium:'',glycemie:'',autres:''},
+  ant: {medicaux:[''],chirurgicaux:[''],familiaux:'',hab:{tabac:false,alcool:false,sedentarite:false},psycho:''},
+  traits: [{nom:'',dose:'',voie:'',frequence:'',indication:''}],
+  suggs: [],
+  validated: [],
+  rejected: [],
+  planNotes: {},
+  generated: false,
+  aiLoading: false,
+  aiError: ''
+});
+
+let S = initState();
+
+const STEPS = [
+  {id:1,label:'Identité',icon:'👤'},
+  {id:2,label:'Clinique',icon:'🩺'},
+  {id:3,label:'Antécédents',icon:'📋'},
+  {id:4,label:'Traitements',icon:'💊'},
+  {id:5,label:'Analyse IA',icon:'🤖'},
+  {id:6,label:'Plan soins',icon:'📊'}
+];
+
+const VOIES = ['Orale (PO)','IV directe','Perfusion IV','Sous-cutanée (SC)','IM','Transdermique','Inhalée','Sublinguale','Rectale','Locale','PICC-line'];
+
+// ══ SAVE ════════════════════════════════════════════════════
+function save() {
+  try { sessionStorage.setItem(SAVE_KEY, JSON.stringify({
+    step:S.step, patient:S.patient, clinique:S.clinique,
+    ant:S.ant, traits:S.traits, suggs:S.suggs,
+    validated:S.validated, rejected:S.rejected,
+    planNotes:S.planNotes, generated:S.generated
+  })); } catch(e) {}
+}
+
+function loadSaved() {
+  try {
+    const d = sessionStorage.getItem(SAVE_KEY);
+    if (!d) return false;
+    const saved = JSON.parse(d);
+    Object.assign(S, saved);
+    return true;
+  } catch(e) { return false; }
+}
+
+function manualSave() {
+  save();
+  document.getElementById('save-msg').textContent = '✅ Sauvegardé';
+  setTimeout(() => document.getElementById('save-msg').textContent = '', 2000);
+}
+
+// ══ HELPERS ═════════════════════════════════════════════════
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+
+function field(label, key, val, ph='', type='text') {
+  return `<div class="fg">
+    <label class="fl">${label}</label>
+    <input type="${type}" value="${esc(val)}" placeholder="${ph}"
+      oninput="setField('${key}',this.value)"
+      onfocus="this.style.borderColor='var(--ac)'"
+      onblur="this.style.borderColor='var(--bo)'"/>
+  </div>`;
+}
+
+function selField(label, key, val, opts) {
+  return `<div class="fg">
+    <label class="fl">${label}</label>
+    <select oninput="setField('${key}',this.value)">
+      <option value="">Sélectionner...</option>
+      ${opts.map(o=>`<option value="${o}"${val===o?' selected':''}>${o}</option>`).join('')}
+    </select>
+  </div>`;
+}
+
+function taField(label, key, val, ph='', rows=3) {
+  return `<div class="fg">
+    ${label ? `<label class="fl">${label}</label>` : ''}
+    <textarea rows="${rows}" placeholder="${ph}"
+      oninput="setField('${key}',this.value)"
+      onfocus="this.style.borderColor='var(--ac)'"
+      onblur="this.style.borderColor='var(--bo)'">${esc(val)}</textarea>
+  </div>`;
+}
+
+function listInput(arr, key, ph) {
+  return arr.map((v,i) => `
+    <div style="display:flex;gap:7px;margin-bottom:7px">
+      <input type="text" value="${esc(v)}" placeholder="${ph}"
+        oninput="updateList('${key}',${i},this.value)"
+        onfocus="this.style.borderColor='var(--ac)'"
+        onblur="this.style.borderColor='var(--bo)'"
+        style="flex:1;background:var(--bg);border:1px solid var(--bo);border-radius:8px;padding:9px 12px;color:var(--tx);font-size:13px;font-family:var(--f);outline:none"/>
+      ${arr.length>1?`<button class="btn btn-da btn-sm" onclick="removeList('${key}',${i})">✕</button>`:''}
+    </div>`).join('');
+}
+
+// ══ RENDER ══════════════════════════════════════════════════
+function render() {
+  const s = STEPS[S.step-1];
+  document.getElementById('step-cnt').textContent = `${S.step}/6`;
+  document.getElementById('step-title').textContent = `${s.icon} ${s.label}`;
+  document.getElementById('prog-bar').style.width = `${S.step/6*100}%`;
+  document.getElementById('btn-prev').style.display = S.step > 1 ? '' : 'none';
+
+  const nb = document.getElementById('btn-next');
+  if (S.step === 6) {
+    nb.textContent = '🔄 Nouveau dossier';
+    nb.onclick = resetAll;
+    nb.disabled = false;
+  } else {
+    nb.textContent = 'Suivant →';
+    nb.onclick = next;
+    nb.disabled = !canNext();
+  }
+
+  renderStepper();
+
+  const c = document.getElementById('content');
+  switch(S.step) {
+    case 1: c.innerHTML = renderStep1(); break;
+    case 2: c.innerHTML = renderStep2(); break;
+    case 3: c.innerHTML = renderStep3(); break;
+    case 4: c.innerHTML = renderStep4(); break;
+    case 5: c.innerHTML = renderStep5(); break;
+    case 6: c.innerHTML = renderStep6(); break;
+  }
+
+  bindTextareas();
+}
+
+function renderStepper() {
+  document.getElementById('stepper').innerHTML = STEPS.map(st => {
+    const done = S.step > st.id, active = S.step === st.id;
+    return `<button class="step ${done?'done':active?'active':''}"
+      onclick="${(done||active)?`goStep(${st.id})`:''}"
+      ${(!done&&!active)?'style="cursor:default"':''}>
+      <span class="step-icon">${done?'✅':st.icon}</span>
+      <span class="step-lbl">${st.label}</span>
+    </button>`;
+  }).join('');
+}
+
+function bindTextareas() {
+  document.querySelectorAll('.plan-table textarea').forEach(ta => {
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    ta.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight + 'px';
+    });
+  });
+}
+
+function canNext() {
+  if (S.step===1) return S.patient.nom && S.patient.prenom && S.patient.age && S.patient.motifHospitalisation;
+  if (S.step===2) return true;
+  if (S.step===3) return S.ant.medicaux.some(x=>x.trim());
+  if (S.step===4) return S.traits.some(t=>t.nom.trim());
+  if (S.step===5) return S.validated.length > 0;
+  return true;
+}
+
+// ══ STEP 1 — IDENTITÉ ═══════════════════════════════════════
+function renderStep1() {
+  const p = S.patient;
+  const cases = loadCases();
+  return `
+  <div class="card" style="border-color:var(--ab)">
+    <div class="card-title">📚 Cas cliniques</div>
+    <button class="btn btn-pr btn-full" onclick="loadMrA()" style="margin-bottom:10px">
+      ⚡ Charger le cas de Monsieur A (exemple complet)
+    </button>
+    ${cases.length ? cases.map((c,i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:6px;border:1px solid var(--bo)">
+        <span style="font-size:12px">📁 ${esc(c.patient.prenom)} ${esc(c.patient.nom)} — ${esc(c.patient.service||'NR')}</span>
+        <div style="display:flex;gap:5px">
+          <button class="btn btn-gh btn-sm" onclick="loadCase(${i})">Charger</button>
+          <button class="btn btn-da btn-sm" onclick="deleteCase(${i})">✕</button>
+        </div>
+      </div>`).join('') : '<p style="color:var(--mu);font-size:12px;padding:4px 0">Aucun cas sauvegardé</p>'}
+    <button class="btn btn-gh btn-sm" onclick="saveCase()" style="margin-top:8px">💾 Sauvegarder le dossier actuel</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👤 Identité et hospitalisation</div>
+    <div class="g2">
+      ${field('Nom','patient.nom',p.nom,'DUPONT')}
+      ${field('Prénom','patient.prenom',p.prenom,'Marie')}
+      ${field('Âge','patient.age',p.age,'65','number')}
+      ${selField('Sexe','patient.sexe',p.sexe,['Féminin','Masculin','Autre'])}
+      ${field('Profession','patient.profession',p.profession,'Retraité, enseignant…')}
+      ${selField('Situation familiale','patient.situationFamiliale',p.situationFamiliale,['Célibataire','Marié(e)','Divorcé(e)','Veuf/Veuve','Vie maritale'])}
+      ${field('Service','patient.service',p.service,'Gastroentérologie, Cardiologie…')}
+      ${field('Date hospitalisation','patient.dateHospitalisation',p.dateHospitalisation,'','date')}
+    </div>
+    ${taField('Motif et histoire de la maladie','patient.motifHospitalisation',p.motifHospitalisation,'Décrivez la situation clinique complète : motif, évolution, examens, résultats biologiques, diagnostics…',5)}
+    ${taField('Allergies connues','patient.allergies',p.allergies,'Aucune allergie connue ou Penicilline, latex…',1)}
+  </div>`;
+}
+
+// ══ STEP 2 — DONNÉES CLINIQUES ══════════════════════════════
+function renderStep2() {
+  const c = S.clinique;
+  return `
+  <div class="card">
+    <div class="card-title">⚖️ Données anthropométriques</div>
+    <div class="g3">
+      ${field('Poids (kg)','clinique.poids',c.poids,'84','number')}
+      ${field('Taille (cm)','clinique.taille',c.taille,'182','number')}
+      <div class="fg">
+        <label class="fl">IMC (calculé auto)</label>
+        <input type="text" id="imc-display" value="${c.imc}" placeholder="Auto" readonly
+          style="background:var(--as);color:var(--ac);font-weight:700;border-color:var(--ab)"/>
+      </div>
+    </div>
+    ${field('Score de Glasgow (/15)','clinique.glasgow',c.glasgow,'15','number')}
+  </div>
+
+  <div class="card">
+    <div class="card-title">❤️ Constantes vitales</div>
+    <div class="g2">
+      ${field('Tension artérielle (mmHg)','clinique.ta',c.ta,'133/79')}
+      ${field('Fréquence cardiaque (bpm)','clinique.fc',c.fc,'81','number')}
+      ${field('SpO2 (%)','clinique.spo2',c.spo2,'98','number')}
+      ${field('Température (°C)','clinique.temperature',c.temperature,'36.5')}
+      ${field('Douleur EVA/EN (/10)','clinique.evaDouleur',c.evaDouleur,'0','number')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🧪 Données biologiques</div>
+    <div class="g3">
+      ${field('Hémoglobine (g/dL)','clinique.hemoglobine',c.hemoglobine,'10')}
+      ${field('CRP (mg/L)','clinique.crp',c.crp,'68')}
+      ${field('Kaliémie (mmol/L)','clinique.potassium',c.potassium,'3.5')}
+      ${field('Natrémie (mmol/L)','clinique.sodium',c.sodium,'141')}
+      ${field('Glycémie (mmol/L)','clinique.glycemie',c.glycemie,'6.1')}
+    </div>
+    ${taField('Autres données importantes','clinique.autres',c.autres,'Albumine, créatinine, plaquettes, INR, résultats scanner, biopsie, dispositifs invasifs…',3)}
+  </div>`;
+}
+
+// ══ STEP 3 — ANTÉCÉDENTS ════════════════════════════════════
+function renderStep3() {
+  const a = S.ant;
+  return `
+  <div class="card">
+    <div class="card-title">🏥 Antécédents médicaux</div>
+    <div id="list-med">${listInput(a.medicaux,'med','Ex: Diabète type 2, HTA, insuffisance cardiaque…')}</div>
+    <button class="btn btn-gh btn-sm" onclick="addList('med')">+ Ajouter</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔪 Antécédents chirurgicaux</div>
+    <div id="list-chir">${listInput(a.chirurgicaux,'chir','Ex: Appendicectomie 2005, PTH genou droit 2019…')}</div>
+    <button class="btn btn-gh btn-sm" onclick="addList('chir')">+ Ajouter</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🌿 Habitudes de vie</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      ${[['tabac','🚬 Tabac'],['alcool','🍷 Alcool'],['sedentarite','🛋️ Sédentarité']].map(([k,l]) =>
+        `<button class="tog ${a.hab[k]?'on':''}" onclick="toggleHab('${k}')">${l}</button>`
+      ).join('')}
+    </div>
+    ${taField('État psychologique','ant.psycho',a.psycho,'Ex: Anxieux, déprimé, peu communicatif, confusion, soutien familial…',2)}
+    ${taField('Antécédents familiaux','ant.familiaux',a.familiaux,'Ex: Père décédé cancer à 60 ans, mère HTA…',1)}
+  </div>`;
+}
+
+// ══ STEP 4 — TRAITEMENTS ════════════════════════════════════
+function renderStep4() {
+  return `
+  <p style="color:var(--mu);font-size:13px;margin-bottom:14px">L'IA utilisera ces traitements pour personnaliser le plan de soins.</p>
+  ${S.traits.map((t,i) => `
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="color:var(--go);font-weight:700;font-size:13px">💊 Traitement ${i+1}</span>
+      ${S.traits.length>1 ? `<button class="btn btn-da btn-sm" onclick="removeTrait(${i})">Supprimer</button>` : ''}
+    </div>
+    <div class="g2">
+      ${field('Médicament','trait.'+i+'.nom',t.nom,'Lasilix, Metformine, Kabiven…')}
+      ${field('Dose','trait.'+i+'.dose',t.dose,'40mg, 42UI, 500mL…')}
+      ${selField('Voie','trait.'+i+'.voie',t.voie,VOIES)}
+      ${field('Fréquence','trait.'+i+'.frequence',t.frequence,'1x/j, /24h, si besoin…')}
+    </div>
+    ${taField('Indication / lien avec le patient','trait.'+i+'.indication',t.indication,'Ex: En lien avec le diabète insulino-dépendant pour équilibre glycémique…',2)}
+  </div>`).join('')}
+  <div style="text-align:center;margin-top:6px">
+    <button class="btn btn-se" onclick="addTrait()">+ Ajouter un traitement</button>
+  </div>`;
+}
+
+// ══ STEP 5 — ANALYSE IA ═════════════════════════════════════
+function renderStep5() {
+  if (S.aiLoading) return `
+    <div style="text-align:center;padding:50px 0">
+      <div class="spinner"></div>
+      <p style="color:var(--ac);font-weight:600">Analyse du dossier de ${esc(S.patient.prenom)} ${esc(S.patient.nom)}…</p>
+      <p style="color:var(--mu);font-size:12px;margin-top:6px">Génération des problèmes réels et des risques potentiels…</p>
+    </div>`;
+
+  if (!S.generated) return `
+    <div class="card" style="text-align:center;padding:32px 18px">
+      <div style="font-size:48px;margin-bottom:12px">🤖</div>
+      <h3 style="font-size:17px;font-weight:700;margin-bottom:10px">Analyse intelligente du dossier</h3>
+      <p style="color:var(--mu);font-size:13px;line-height:1.65;margin-bottom:16px">
+        L'IA analyse <strong>toutes les données saisies</strong> pour générer des
+        <strong style="color:var(--da)">problèmes réels (PES)</strong> et des
+        <strong style="color:var(--go)">risques potentiels</strong> avec un plan de soins
+        <strong style="color:var(--ac)">entièrement personnalisé</strong>.
+      </p>
+      <p style="color:var(--mu);font-size:12px;margin-bottom:20px">
+        Chaque problème aura ses propres surveillances, actions et évaluations spécifiques.
+      </p>
+      <button class="btn btn-pr" onclick="launchAI()">🔬 Lancer l'analyse complète</button>
+      ${S.aiError ? `
+        <div style="margin-top:12px;padding:10px 14px;background:var(--ds);border:1px solid rgba(224,82,82,.3);border-radius:8px">
+          <p style="color:var(--da);font-size:12px;margin-bottom:6px">${esc(S.aiError)}</p>
+          <button class="btn btn-da btn-sm" onclick="launchAI()">🔄 Réessayer</button>
+        </div>` : ''}
+    </div>`;
+
+  const probs = S.suggs.filter(x=>x.type==='PROBLEME');
+  const risks  = S.suggs.filter(x=>x.type==='RISQUE');
+
+  const divider = (color, soft, label) => `
+    <div class="divider">
+      <div class="div-line" style="background:${soft}"></div>
+      <span class="div-lbl" style="color:${color};background:${soft};border:1px solid ${color}44">${label}</span>
+      <div class="div-line" style="background:${soft}"></div>
+    </div>`;
+
+  return `
+  <div class="stats">
+    ${[['Problèmes',probs.length,'var(--da)'],['Risques',risks.length,'var(--go)'],['Validés',S.validated.length,'var(--ac)'],['Rejetés',S.rejected.length,'var(--mu)']].map(([l,n,c])=>`
+      <div class="stat">
+        <div class="stat-n" style="color:${c}">${n}</div>
+        <div class="stat-l">${l}</div>
+      </div>`).join('')}
+  </div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px" class="no-print">
+    <button class="btn btn-gh btn-sm" onclick="resetAI()">🔄 Relancer</button>
+    <button class="btn btn-se btn-sm" onclick="regenAI()">⚡ Regénérer</button>
+  </div>
+
+  ${probs.length ? divider('var(--da)','var(--ds)','🔴 Problèmes réels — Priorité absolue') + probs.map((x,i)=>sugCard(x,i+1)).join('') : ''}
+  ${risks.length ? divider('var(--go)','var(--gs)','⚠️ Risques potentiels') + risks.map((x,i)=>sugCard(x,i+1)).join('') : ''}
+
+  ${S.validated.length===0 ? `
+    <div style="background:var(--gs);border:1px solid rgba(240,165,0,.3);border-radius:9px;padding:10px 14px;margin-top:8px">
+      <p style="color:var(--go);font-size:12px">⚡ Validez au moins un élément pour accéder au plan de soins.</p>
+    </div>` : ''}`;
+}
+
+function sugCard(item, rank) {
+  const isP = item.type === 'PROBLEME';
+  const isV = S.validated.some(x=>x.id===item.id);
+  const isR = S.rejected.includes(item.id);
+  const color = isP ? 'var(--da)' : 'var(--go)';
+  const soft  = isP ? 'var(--ds)' : 'var(--gs)';
+  const border = isV ? 'var(--ac)' : isR ? 'rgba(100,120,140,.2)' : color;
+
+  return `
+  <div class="sug-card ${isR?'rejected':''}" style="background:var(--card);border:1px solid ${border};border-left:4px solid ${border}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px;margin-bottom:9px">
+      <div style="display:flex;align-items:center;gap:9px;flex:1">
+        <div style="background:${soft};border:1px solid ${color}44;border-radius:9px;padding:5px 8px;text-align:center;flex-shrink:0">
+          <div style="font-size:18px">${item.icon}</div>
+          <div style="color:${color};font-size:9px;font-weight:800">#${rank}</div>
+        </div>
+        <div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:3px">
+            <span style="background:${soft};color:${color};font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px">${isP?'PROBLÈME RÉEL':'RISQUE POTENTIEL'}</span>
+            ${isV?'<span style="background:var(--as);color:var(--ac);font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px">✓ VALIDÉ</span>':''}
+          </div>
+          <div style="font-weight:700;font-size:13px">${esc(item.label)}</div>
+          ${item.pes ? `<div style="font-size:11px;color:${color};margin-top:2px;font-style:italic">${esc(item.pes)}</div>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        ${!isR
+          ? `<button class="btn ${isV?'btn-gh':'btn-pr'} btn-sm" onclick="validate('${item.id}')">${isV?'✓ Validé':'Valider'}</button>
+             <button class="btn btn-da btn-sm" onclick="reject('${item.id}')">Rejeter</button>`
+          : `<button class="btn btn-se btn-sm" onclick="validate('${item.id}')">↩ Rétablir</button>`}
+      </div>
+    </div>
+    <div style="background:var(--bg);border-radius:7px;padding:7px 11px;border-left:3px solid ${color}">
+      <span style="font-size:10px;color:var(--mu)">🤖 </span>
+      <span style="font-size:12px;color:var(--mu);font-style:italic">${esc(item.justification)}</span>
+    </div>
+  </div>`;
+}
+
+// ══ STEP 6 — PLAN DE SOINS ══════════════════════════════════
+function renderStep6() {
+  if (!S.validated.length) return `
+    <div style="text-align:center;padding:50px 0">
+      <div style="font-size:44px;margin-bottom:14px">📋</div>
+      <p style="color:var(--mu)">Aucun élément validé. Retournez à l'étape 5.</p>
+    </div>`;
+
+  const p  = S.patient;
+  const cl = S.clinique;
+  const probs = S.validated.filter(x=>x.type==='PROBLEME');
+  const risks  = S.validated.filter(x=>x.type==='RISQUE');
+  const all   = [...probs,...risks];
+
+  const planSection = (items, color, soft, title) => items.length === 0 ? '' : `
+    <h3 style="color:${color};font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">${title}</h3>
+    ${items.map((item, rank) => {
+      const n = S.planNotes[item.id] || {};
+      return `
+      <div class="card" style="border-left:4px solid ${color};margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div style="background:${soft};border:1px solid ${color}44;border-radius:9px;padding:5px 9px;text-align:center;flex-shrink:0">
+            <div style="font-size:18px">${item.icon}</div>
+            <div style="color:${color};font-size:9px;font-weight:800">#${rank+1}</div>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14px">${esc(item.label)}</div>
+            ${item.pes?`<div style="font-size:11px;color:${color};font-weight:600;margin-top:2px">${esc(item.pes)}</div>`:''}
+            <div style="font-size:11px;color:var(--mu);font-style:italic;margin-top:2px">${esc(item.justification)}</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="plan-table">
+            <thead><tr>
+              <th style="width:22%">Problème (PES) / Diagnostic infirmier</th>
+              <th style="width:22%">Objectifs / Prescription</th>
+              <th style="width:34%">Actions infirmières (rôle propre, sur prescription, collaboration)</th>
+              <th style="width:22%">Évaluation</th>
+            </tr></thead>
+            <tbody><tr>
+              <td style="font-weight:600;color:${color};font-size:11px">
+                ${esc(item.label)}
+                ${item.pes?`<br><span style="font-size:10px;font-weight:400;font-style:italic;color:var(--mu)">${esc(item.pes)}</span>`:''}
+              </td>
+              <td><div class="ai-badge">🤖 IA</div><textarea oninput="updatePlan('${item.id}','objectif',this.value)">${esc(item.plan?.objectif||n.objectif||'')}</textarea></td>
+              <td><div class="ai-badge">🤖 IA</div><textarea oninput="updatePlan('${item.id}','actions',this.value)">${esc(item.plan?.actions||n.actions||'')}</textarea></td>
+              <td><div class="ai-badge">🤖 IA</div><textarea oninput="updatePlan('${item.id}','evaluation',this.value)" placeholder="À compléter après observation du patient…">${esc(item.plan?.evaluation||n.evaluation||'')}</textarea></td>
+            </tr></tbody>
+          </table>
+        </div>
+      </div>`;
+    }).join('')}`;
+
+  const prog = all.flatMap(item => item.programmation||[]);
+
+  return `
+  <div class="patient-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:9px">
+      <div>
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:3px">${esc(p.prenom)} ${esc(p.nom)}</h2>
+        <p style="color:var(--mu);font-size:12px">${esc(p.age)} ans · ${esc(p.sexe)} · ${esc(p.profession)} · ${esc(p.service)}</p>
+        ${p.motifHospitalisation ? `<p style="color:var(--ac);font-size:12px;margin-top:5px">📍 ${esc(p.motifHospitalisation.substring(0,120))}${p.motifHospitalisation.length>120?'…':''}</p>` : ''}
+        ${cl.ta || cl.hemoglobine ? `<p style="color:var(--mu);font-size:11px;margin-top:4px">
+          ${cl.ta?`TA: ${esc(cl.ta)} mmHg`:''} ${cl.fc?`· FC: ${esc(cl.fc)} bpm`:''} ${cl.temperature?`· T°: ${esc(cl.temperature)}°C`:''}
+          ${cl.hemoglobine?`· Hb: ${esc(cl.hemoglobine)} g/dL`:''} ${cl.crp?`· CRP: ${esc(cl.crp)} mg/L`:''}
+        </p>` : ''}
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap" class="no-print">
+        <button class="btn btn-gh btn-sm" onclick="exportPDF()">📄 PDF</button>
+        <button class="btn btn-se btn-sm" onclick="window.print()">🖨️ Imprimer</button>
+      </div>
+    </div>
+    ${p.allergies ? `<div class="allergy-tag">⚠️ ALLERGIES : ${esc(p.allergies)}</div>` : ''}
+  </div>
+
+  ${S.traits.some(t=>t.nom) ? `
+  <div class="card">
+    <div class="card-title">💊 Traitements en cours</div>
+    <div class="table-wrap">
+      <table class="plan-table">
+        <thead><tr><th>Médicament</th><th>Dose</th><th>Voie</th><th>Fréquence</th><th>Indication</th></tr></thead>
+        <tbody>${S.traits.filter(t=>t.nom).map(t=>`<tr>
+          <td style="font-weight:600">${esc(t.nom)}</td>
+          <td style="color:var(--go)">${esc(t.dose)}</td>
+          <td style="color:var(--mu)">${esc(t.voie)}</td>
+          <td style="color:var(--mu)">${esc(t.frequence)}</td>
+          <td style="color:var(--mu);font-size:10px">${esc(t.indication)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>` : ''}
+
+  ${planSection(probs,'var(--da)','var(--ds)','🔴 Problèmes réels — Priorité absolue')}
+  ${planSection(risks,'var(--go)','var(--gs)','⚠️ Risques potentiels')}
+
+  ${prog.length ? `
+  <div class="card">
+    <div class="card-title">🕐 Programmation des soins</div>
+    <div style="overflow-x:auto">
+      <table class="prog-table">
+        <thead><tr><th style="width:15%">Horaire</th><th style="width:55%">Soins / Actions</th><th style="width:30%">Intervenants</th></tr></thead>
+        <tbody>${prog.map(p=>`<tr>
+          <td style="color:var(--ac);font-weight:700">${esc(p.horaire)}</td>
+          <td>${esc(p.soins)}</td>
+          <td style="color:var(--mu);font-size:11px">${esc(p.intervenants)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>` : ''}`;
+}
+
+// ══ MUTATIONS ════════════════════════════════════════════════
+function setField(key, val) {
+  const parts = key.split('.');
+  if (parts[0]==='patient') S.patient[parts[1]] = val;
+  else if (parts[0]==='clinique') { S.clinique[parts[1]] = val; calcIMC(); }
+  else if (parts[0]==='ant') S.ant[parts[1]] = val;
+  else if (parts[0]==='trait') S.traits[+parts[1]][parts[2]] = val;
+  document.getElementById('btn-next').disabled = !canNext();
+  save();
+}
+
+function calcIMC() {
+  const p = parseFloat(S.clinique.poids), t = parseFloat(S.clinique.taille);
+  if (p > 0 && t > 0) {
+    const imc = (p / ((t/100)**2)).toFixed(1);
+    S.clinique.imc = imc;
+    const el = document.getElementById('imc-display');
+    if (el) el.value = imc;
+  }
+}
+
+function updateList(key, idx, val) {
+  if (key==='med') S.ant.medicaux[idx] = val;
+  if (key==='chir') S.ant.chirurgicaux[idx] = val;
+  save();
+}
+
+function addList(key) {
+  if (key==='med') S.ant.medicaux.push('');
+  if (key==='chir') S.ant.chirurgicaux.push('');
+  render();
+}
+
+function removeList(key, idx) {
+  if (key==='med') S.ant.medicaux.splice(idx,1);
+  if (key==='chir') S.ant.chirurgicaux.splice(idx,1);
+  render();
+}
+
+function toggleHab(k) { S.ant.hab[k] = !S.ant.hab[k]; render(); }
+function addTrait() { S.traits.push({nom:'',dose:'',voie:'',frequence:'',indication:''}); render(); }
+function removeTrait(i) { S.traits.splice(i,1); render(); }
+
+function validate(id) {
+  const item = S.suggs.find(x=>x.id===id);
+  if (!item) return;
+  S.validated = [...S.validated.filter(x=>x.id!==id), {...item}];
+  S.rejected  = S.rejected.filter(x=>x!==id);
+  save(); render();
+}
+
+function reject(id) {
+  S.rejected  = [...S.rejected, id];
+  S.validated = S.validated.filter(x=>x.id!==id);
+  save(); render();
+}
+
+function updatePlan(id, field, val) {
+  if (!S.planNotes[id]) S.planNotes[id] = {};
+  S.planNotes[id][field] = val;
+  const item = S.validated.find(x=>x.id===id);
+  if (item) { if (!item.plan) item.plan={}; item.plan[field]=val; }
+  save();
+}
+
+// ══ NAVIGATION ═══════════════════════════════════════════════
+function next() { if (canNext() && S.step<6) { S.step++; save(); render(); window.scrollTo(0,0); } }
+function prev() { if (S.step>1) { S.step--; save(); render(); window.scrollTo(0,0); } }
+function goStep(s) { if (s<=S.step) { S.step=s; save(); render(); window.scrollTo(0,0); } }
+function resetAll() { sessionStorage.removeItem(SAVE_KEY); S = initState(); render(); window.scrollTo(0,0); }
+function resetAI() { S.generated=false; S.suggs=[]; S.validated=[]; S.rejected=[]; S.aiError=''; save(); render(); }
+function regenAI() { S.suggs=[]; S.validated=[]; S.rejected=[]; S.generated=false; S.aiError=''; save(); render(); setTimeout(launchAI, 100); }
+
+// ══ CAS CLINIQUES ═════════════════════════════════════════════
+const CASES_KEY = 'infirmiapp_cases';
+function loadCases() { try { return JSON.parse(localStorage.getItem(CASES_KEY)||'[]'); } catch(e) { return []; } }
+function saveCases(c) { try { localStorage.setItem(CASES_KEY, JSON.stringify(c)); } catch(e) {} }
+
+function loadMrA() {
+  S.patient = {...MR_A.patient};
+  S.clinique = {...MR_A.clinique};
+  S.ant = {...MR_A.ant, hab:{...MR_A.ant.hab}, medicaux:[...MR_A.ant.medicaux], chirurgicaux:[...MR_A.ant.chirurgicaux]};
+  S.traits = MR_A.traits.map(t=>({...t}));
+  S.suggs=[]; S.validated=[]; S.rejected=[]; S.generated=false; S.aiError='';
+  save(); render();
+  alert('Dossier de Monsieur A chargé ! Parcourez les étapes et lancez l analyse IA.');
+}
+
+function saveCase() {
+  if (!S.patient.nom && !S.patient.prenom) { alert('Renseignez d abord le nom du patient.'); return; }
+  const cases = loadCases();
+  cases.push({
+    patient:{...S.patient}, clinique:{...S.clinique},
+    ant:{...S.ant, hab:{...S.ant.hab}, medicaux:[...S.ant.medicaux], chirurgicaux:[...S.ant.chirurgicaux]},
+    traits:S.traits.map(t=>({...t}))
+  });
+  saveCases(cases); render();
+  alert('Cas sauvegardé !');
+}
+
+function loadCase(i) {
+  const c = loadCases()[i];
+  if (!c) return;
+  S.patient = {...c.patient}; S.clinique = {...c.clinique};
+  S.ant = {...c.ant, hab:{...c.ant.hab}, medicaux:[...c.ant.medicaux], chirurgicaux:[...c.ant.chirurgicaux]};
+  S.traits = c.traits.map(t=>({...t}));
+  S.suggs=[]; S.validated=[]; S.rejected=[]; S.generated=false; S.aiError='';
+  save(); render();
+}
+
+function deleteCase(i) {
+  if (!confirm('Supprimer ce cas ?')) return;
+  const cases = loadCases(); cases.splice(i,1); saveCases(cases); render();
+}
+
+// ══ PROMPT IA ════════════════════════════════════════════════
+function buildPrompt(type) {
+  const p=S.patient, cl=S.clinique, a=S.ant;
+  const med  = a.medicaux.filter(Boolean).join(', ') || 'NR';
+  const chir = a.chirurgicaux.filter(Boolean).join(', ') || 'NR';
+  const hab  = Object.entries(a.hab).filter(([,v])=>v).map(([k])=>k).join(', ') || 'aucune';
+  const trts = S.traits.filter(t=>t.nom).map(t=>`${t.nom} ${t.dose} (${t.voie}, ${t.frequence}) — ${t.indication}`).join(' | ') || 'aucun';
+
+  const dossier = `
+DOSSIER PATIENT :
+- Identité : ${p.prenom} ${p.nom}, ${p.age} ans, ${p.sexe}, ${p.profession}, ${p.situationFamiliale}
+- Service : ${p.service} | Date : ${p.dateHospitalisation}
+- Motif : ${p.motifHospitalisation}
+- Allergies : ${p.allergies||'aucune'}
+- Constantes : TA ${cl.ta||'NR'} mmHg | FC ${cl.fc||'NR'} bpm | T° ${cl.temperature||'NR'}°C | SpO2 ${cl.spo2||'NR'}% | EVA ${cl.evaDouleur||'NR'}/10
+- Bio : Hb ${cl.hemoglobine||'NR'} g/dL | CRP ${cl.crp||'NR'} mg/L | K+ ${cl.potassium||'NR'} mmol/L | Na ${cl.sodium||'NR'} mmol/L | Glycémie ${cl.glycemie||'NR'} mmol/L | IMC ${cl.imc||'NR'}
+- Autres : ${cl.autres||'NR'}
+- Antécédents médicaux : ${med}
+- Antécédents chirurgicaux : ${chir}
+- Habitudes à risque : ${hab}
+- État psychologique : ${a.psycho||'NR'}
+- Traitements : ${trts}`;
+
+  const rules = `
+RÈGLES ABSOLUES :
+1. Formule PES STRICTE — 3 éléments uniquement :
+   "[Problème précis] lié à [étiologie/cause] se manifestant par [signes cliniques observables AVEC valeurs biologiques réelles]"
+   
+   RÈGLES PES :
+   - Le PROBLÈME = ce que présente le patient (dénutrition, hypokaliémie, douleur, escarre stade 3...)
+   - L ÉTIOLOGIE = la cause (pancréatite aiguë, pertes digestives, alitement prolongé, contexte infectieux...)
+   - LES SIGNES = ce qu on observe/mesure avec les VRAIES valeurs du dossier (amaigrissement, kaliémie à 2,7 mmol/L, plaie sacrée 5x4cm, Hb à 10 g/dL...)
+   - JAMAIS de traitements dans la PES
+   - JAMAIS de médicaments dans la PES
+   - Exemples corrects :
+     * "Dénutrition sévère liée à une pancréatite aiguë compliquée se manifestant par un amaigrissement important, une asthénie majeure et une alimentation entérale par SNG"
+     * "Hypokaliémie liée aux pertes digestives par aspiration SNG se manifestant par une kaliémie à 2,7 mmol/L et une fatigue musculaire"
+     * "Altération de l état cutané liée à l alitement prolongé se manifestant par une escarre sacrée stade 3"
+     * "Risque infectieux lié aux dispositifs invasifs (PICC-line, SNG, drain abdominal) et à l immunodépression pouvant se manifester par hyperthermie, rougeur au point de ponction, écoulement purulent"
+2. Citer SYSTÉMATIQUEMENT les valeurs biologiques réelles, noms des médicaments, dispositifs invasifs
+3. CHAQUE PROBLÈME doit avoir des colonnes DIFFÉRENTES et SPÉCIFIQUES :
+   - objectif : Objectif SMART avec valeur cible chiffrée et délai propres à CE problème + prescription médicale liée (médicaments réels prescrits pour CE problème)
+   - actions : Actions infirmières COMPLÈTES et SPÉCIFIQUES à CE problème, structurées en 3 parties :
+     * Rôle propre : surveillances et actions autonomes de l infirmier (signes cliniques à surveiller, prévention, éducation, confort, hygiène)
+     * Rôle sur prescription : administration des médicaments prescrits (citer les vrais médicaments), réalisation des examens prescrits
+     * Collaboration : kinésithérapeute, diététicienne, médecin, psychologue selon le contexte
+     IMPORTANT : Les actions doivent être DIFFÉRENTES pour chaque problème (pas de copier-coller)
+   - evaluation : Résultats observables et mesurables PROPRES à CE problème avec valeurs cibles
+4. Programmation : 3 horaires réalistes (08h00, 14h00, 22h00) avec soins SPÉCIFIQUES à CE problème
+5. JSON CONCIS pour éviter la troncature : max 3 lignes par champ
+6. Réponds UNIQUEMENT avec un tableau JSON valide. Commence par [ et finit par ].`;
+
+  if (type === 'PROBLEME') {
+    return `Tu es un infirmier clinicien expert. Génère UNIQUEMENT les PROBLÈMES RÉELS (type "PROBLEME") pour ce patient. Entre 5 et 7 problèmes réels. Triés du plus urgent au moins urgent.
+${dossier}
+${rules}
+
+FORMAT : [{"id":"pb_1","type":"PROBLEME","priorite":1,"label":"Libellé court","icon":"emoji","pes":"PES complète avec valeurs réelles","justification":"Lien avec CE patient en 1 phrase","surveillances":["Surv 1 spécifique","Surv 2","Surv 3"],"plan":{"objectif":"Objectif SMART avec valeur cible ET prescription médicale : médicaments réels prescrits pour CE problème","actions":"Rôle propre : [surveillances spécifiques à CE problème] | Sur prescription : [médicaments/examens prescrits pour CE problème] | Collaboration : [intervenants si besoin]","evaluation":"Résultats observés/attendus mesurables pour CE problème avec valeurs cibles"},"programmation":[{"horaire":"08h00","soins":"Soins spécifiques à CE problème","intervenants":"IDE"},{"horaire":"14h00","soins":"Soins spécifiques","intervenants":"IDE / AS"},{"horaire":"22h00","soins":"Soins spécifiques","intervenants":"IDE"}]}]`;
+  } else {
+    return `Tu es un infirmier clinicien expert. Génère UNIQUEMENT les RISQUES POTENTIELS (type "RISQUE") pour ce patient. Entre 5 et 7 risques. Triés du plus probable au moins probable.
+${dossier}
+${rules}
+
+FORMAT : [{"id":"risk_1","type":"RISQUE","priorite":1,"label":"Libellé court","icon":"emoji","pes":"Risque de [X] lié à [étiologie] pouvant se manifester par [signes]","justification":"Lien avec CE patient en 1 phrase","surveillances":["Surv 1 spécifique","Surv 2","Surv 3"],"plan":{"objectif":"Objectif SMART avec valeur cible ET prescription médicale : médicaments réels prescrits pour CE risque","actions":"Rôle propre : [surveillances spécifiques à CE risque] | Sur prescription : [médicaments/examens prescrits pour CE risque] | Collaboration : [intervenants si besoin]","evaluation":"Résultats observés/attendus mesurables pour CE risque avec valeurs cibles"},"programmation":[{"horaire":"08h00","soins":"Soins spécifiques à CE risque","intervenants":"IDE"},{"horaire":"14h00","soins":"Soins spécifiques","intervenants":"IDE / AS"},{"horaire":"22h00","soins":"Soins spécifiques","intervenants":"IDE"}]}]`;
+  }
+}
+
+// ══ APPEL API CLAUDE ════════════════════════════════════════
+async function callClaude(prompt) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 4000,
+      system: 'Tu es un infirmier clinicien expert. Réponds UNIQUEMENT avec un tableau JSON valide commençant par [ et finissant par ]. Aucun texte avant ou après. Aucun markdown.',
+      messages: [{role:'user', content:prompt}]
+    })
+  });
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
+  const raw = data.content.map(b=>b.text||'').join('').trim();
+  const match = raw.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error('Format JSON invalide');
+
+  let jsonStr = match[0];
+  try { JSON.parse(jsonStr); }
+  catch(e) {
+    const last = jsonStr.lastIndexOf('},');
+    if (last > 0) jsonStr = jsonStr.substring(0,last+1)+']';
+    else throw new Error('JSON tronqué');
+  }
+  return JSON.parse(jsonStr);
+}
+
+async function launchAI() {
+  S.aiLoading = true; S.aiError = ''; render();
+  try {
+    // 2 appels parallèles : problèmes + risques
+    const [probs, risks] = await Promise.all([
+      callClaude(buildPrompt('PROBLEME')),
+      callClaude(buildPrompt('RISQUE'))
+    ]);
+
+    // Problèmes TOUJOURS en premier, triés par priorité, puis risques triés par priorité
+    const sortedProbs = probs.filter(x=>x.type==='PROBLEME').sort((a,b)=>a.priorite-b.priorite);
+    const sortedRisks = risks.filter(x=>x.type==='RISQUE').sort((a,b)=>a.priorite-b.priorite);
+    S.suggs = [...sortedProbs, ...sortedRisks];
+    // Validation dans le même ordre : problèmes d'abord, risques ensuite
+    S.validated = [...sortedProbs, ...sortedRisks].map(item=>({...item}));
+    S.generated = true;
+  } catch(err) {
+    S.aiError = 'Erreur : ' + err.message + '. Réessayez.';
+    console.error(err);
+  }
+  S.aiLoading = false; save(); render();
+}
+
+// ══ EXPORT PDF ═══════════════════════════════════════════════
+function exportPDF() {
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const p = S.patient, cl = S.clinique;
+  const date = new Date().toLocaleDateString('fr-FR');
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(0,180,155);
+  doc.text('DÉMARCHE DE SOINS INFIRMIERS', 14, 14);
+
+  doc.setFontSize(8.5); doc.setTextColor(60,60,60); doc.setFont('helvetica','normal');
+  doc.text(`Patient : ${p.prenom} ${p.nom} | ${p.age} ans | ${p.sexe} | ${p.profession} | Service : ${p.service||'NR'}`, 14, 21);
+  doc.text(`Motif : ${(p.motifHospitalisation||'NR').substring(0,120)} | Allergies : ${p.allergies||'aucune'} | Date : ${date}`, 14, 26);
+  if (cl.ta || cl.hemoglobine) {
+    doc.text(`TA: ${cl.ta||'NR'} mmHg | FC: ${cl.fc||'NR'} bpm | T°: ${cl.temperature||'NR'}°C | Hb: ${cl.hemoglobine||'NR'} g/dL | CRP: ${cl.crp||'NR'} mg/L`, 14, 31);
+  }
+
+  const trts = S.traits.filter(t=>t.nom);
+  let y = 36;
+  if (trts.length) {
+    doc.setTextColor(0,120,100); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+    doc.text('TRAITEMENTS EN COURS', 14, y); y+=3;
+    doc.autoTable({
+      startY:y,
+      head:[['Médicament','Dose','Voie','Fréquence','Indication']],
+      body:trts.map(t=>[t.nom,t.dose,t.voie,t.frequence,t.indication]),
+      styles:{fontSize:7,cellPadding:2.5},
+      headStyles:{fillColor:[12,22,33],textColor:[0,194,168],fontStyle:'bold'},
+      alternateRowStyles:{fillColor:[242,250,252]},
+      margin:{left:14,right:14}
+    });
+    y = doc.lastAutoTable.finalY + 5;
+  }
+
+  const all = [...S.validated.filter(x=>x.type==='PROBLEME'),...S.validated.filter(x=>x.type==='RISQUE')];
+  doc.setTextColor(0,120,100); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+  doc.text('PLAN DE SOINS INFIRMIERS', 14, y); y+=3;
+
+  doc.autoTable({
+    startY: y,
+    head:[['Problème (PES) / Diagnostic infirmier','Objectifs / Prescription','Actions infirmières (rôle propre, sur prescription, collaboration)','Évaluation']],
+    body: all.map((item,i) => {
+      const n = item.plan||{};
+      return [
+        `#${i+1} [${item.type==='PROBLEME'?'PROBLÈME':'RISQUE'}]\n${item.label}\n\n${item.pes||''}`,
+        n.objectif||'—',
+        n.actions||'—',
+        n.evaluation||'À évaluer'
+      ];
+    }),
+    styles:{fontSize:6.5,cellPadding:3,valign:'top',overflow:'linebreak'},
+    headStyles:{fillColor:[12,22,33],textColor:[0,194,168],fontStyle:'bold',fontSize:7},
+    columnStyles:{0:{cellWidth:55,fontStyle:'bold'},1:{cellWidth:55},2:{cellWidth:100},3:{cellWidth:52}},
+    alternateRowStyles:{fillColor:[247,252,253]},
+    didDrawCell:(d)=>{
+      if(d.section==='body'&&d.column.index===0){
+        const item=all[d.row.index]; if(!item) return;
+        const isP=item.type==='PROBLEME';
+        doc.setDrawColor(isP?210:230,isP?70:150,isP?70:0);
+        doc.setLineWidth(.8);
+        doc.line(d.cell.x,d.cell.y,d.cell.x,d.cell.y+d.cell.height);
+      }
+    },
+    margin:{left:14,right:14}
+  });
+
+  const prog = all.flatMap(item=>item.programmation||[]);
+  if (prog.length) {
+    const py = doc.lastAutoTable.finalY + 5;
+    doc.setTextColor(0,120,100); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+    doc.text('PROGRAMMATION DES SOINS', 14, py);
+    doc.autoTable({
+      startY:py+3,
+      head:[['Horaire','Soins / Actions','Intervenants']],
+      body:prog.map(p=>[p.horaire,p.soins,p.intervenants]),
+      styles:{fontSize:7,cellPadding:3},
+      headStyles:{fillColor:[12,22,33],textColor:[0,194,168],fontStyle:'bold'},
+      columnStyles:{0:{cellWidth:25},1:{cellWidth:195},2:{cellWidth:45}},
+      margin:{left:14,right:14}
+    });
+  }
+
+  const ph = doc.internal.pageSize.getHeight();
+  doc.setFontSize(6); doc.setTextColor(150,150,150); doc.setFont('helvetica','normal');
+  doc.text(`InfirmiApp v3 — Généré le ${date} — Document à valider par un professionnel de santé habilité`, 14, ph-4);
+  doc.save(`DesoinsInfirmiers_${p.nom}_${p.prenom}_${date.replace(/\//g,'-')}.pdf`);
+}
+
+// ══ INIT ════════════════════════════════════════════════════
+if (loadSaved()) {
+  document.getElementById('save-banner').style.display = 'block';
+}
+render();
+</script>
+</body>
+</html>
